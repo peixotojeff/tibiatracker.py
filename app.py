@@ -16,7 +16,13 @@ from figures import (
     create_weekday_bar_figure,
     create_eta_scenarios_figure,
     create_adherence_figure,
-    create_delivery_curve_figure
+    create_delivery_curve_figure,
+    # --- NOVOS GRÁFICOS ---
+    create_progress_timeline,
+    create_daily_efficiency,
+    create_activity_calendar,
+    create_performance_trend,
+    create_xp_distribution
 )
 from layout import (
     create_top_indicators,
@@ -73,7 +79,7 @@ def render_dashboard(_):
             cor_streak_baixo=metrics["cor_streak_baixo"]
         )
 
-        # === Gráficos ===
+        # === Gráficos principais ===
         fig_roadmap = create_roadmap_figure(metrics["level_real"])
         fig_moving = create_moving_avg_figure(enriched_df)
         fig_heatmap = create_heatmap_figure(enriched_df)
@@ -86,6 +92,13 @@ def render_dashboard(_):
         )
         fig_adherence = create_adherence_figure(enriched_df, metrics["xp_meta_diaria"])
         fig_delivery = create_delivery_curve_figure(enriched_df)
+
+        # === NOVOS GRÁFICOS PROFISSIONAIS ===
+        fig_timeline = create_progress_timeline(enriched_df)
+        fig_efficiency = create_daily_efficiency(enriched_df, metrics["xp_meta_diaria"])
+        fig_calendar = create_activity_calendar(enriched_df)
+        fig_trend = create_performance_trend(enriched_df)
+        fig_distribution = create_xp_distribution(enriched_df)
 
         # === Componentes compostos ===
         milestone_list = create_milestone_list(metrics["historico_milestones"])
@@ -101,17 +114,42 @@ def render_dashboard(_):
         return dbc.Container([
             html.H1("PROJETO ELDER DRUID 1000", className="text-center my-4 text-warning"),
 
+            # Indicadores principais
             top_row,
             metrics_row,
 
-            dbc.Card([dbc.CardHeader("ROADMAP DE PROGRESSO"), dbc.CardBody(dcc.Graph(figure=fig_roadmap, config={'displayModeBar': False}))], className="mb-4"),
-            dbc.Card([dbc.CardHeader("XP DIÁRIO + MÉDIAS MÓVEIS"), dbc.CardBody(dcc.Graph(figure=fig_moving))], className="mb-4"),
-            dbc.Card([dbc.CardHeader("INTENSIDADE DE HUNTS"), dbc.CardBody(dcc.Graph(figure=fig_heatmap))], className="mb-4"),
-            dbc.Card([dbc.CardHeader("MÉDIA XP POR DIA DA SEMANA"), dbc.CardBody(dcc.Graph(figure=fig_weekday))], className="mb-4"),
+            # Roadmap + Progresso com Marcos
+            dbc.Row([
+                dbc.Col(dbc.Card([dbc.CardHeader("ROADMAP DE PROGRESSO"), dbc.CardBody(dcc.Graph(figure=fig_roadmap, config={'displayModeBar': False}))]))],
+            className="mb-4"),
 
+            dbc.Row([
+                dbc.Col(dbc.Card([dbc.CardHeader("Intensidade de Hunts (Heatmap Semanal)"), dbc.CardBody(dcc.Graph(figure=fig_heatmap))])),
+            ], className="mb-4"),
+
+            # XP Diário + Eficiência
+            dbc.Row([
+                dbc.Col(dbc.Card([dbc.CardHeader("XP DIÁRIO + MÉDIAS MÓVEIS"), dbc.CardBody(dcc.Graph(figure=fig_moving))]), width=12, md=7),
+                dbc.Col(dbc.Card([dbc.CardHeader("Eficiência Diária (% da Meta)"), dbc.CardBody(dcc.Graph(figure=fig_efficiency))]), width=12, md=5),
+            ], className="mb-4"),
+
+            # Calendário + Distribuição
+            dbc.Row([
+                # dbc.Col(dbc.Card([dbc.CardHeader("Calendário de Atividade"), dbc.CardBody(dcc.Graph(figure=fig_calendar))]), width=12, md=7),
+                dbc.Col(dbc.Card([dbc.CardHeader("Distribuição de XP Diária"), dbc.CardBody(dcc.Graph(figure=fig_distribution))]), width=12, md=12),
+            ], className="mb-4"),
+
+            # Tendência + Heatmap
+            dbc.Row([
+                dbc.Col(dbc.Card([dbc.CardHeader("Tendência de Desempenho"), dbc.CardBody(dcc.Graph(figure=fig_trend))]), width=12, md=6),
+                dbc.Col(dbc.Card([dbc.CardHeader("Progresso com Marcos-Chave"), dbc.CardBody(dcc.Graph(figure=fig_timeline))]), width=12, md=6),
+            ], className="mb-4"),
+
+            # Curvas + Dia da Semana
             curves_row,
-            health_effort_row,
+            dbc.Card([dbc.CardHeader("Média XP por Dia da Semana"), dbc.CardBody(dcc.Graph(figure=fig_weekday))], className="mb-4"),
 
+            # Cenários ETA + Saúde/Esfôrço
             dbc.Row(
                 dbc.Col(
                     dbc.Card([
@@ -122,7 +160,9 @@ def render_dashboard(_):
                 ),
                 className="mb-4"
             ),
+            health_effort_row,
 
+            # Histórico de Marcos
             dbc.Card([dbc.CardHeader("HISTÓRICO DE MARCOS ATINGIDOS"), dbc.CardBody(milestone_list)], className="mb-4")
         ], fluid=True)
 
